@@ -113,8 +113,16 @@ def predict_logic(df, days, noise, adr_impact):
     try:
         model = ExponentialSmoothing(train, trend='add').fit()
         forecast = model.forecast(days)
-        # 美股修正因子 (0.4 權重)
+        
+        # --- 加入強勢修正因子 ---
+        # 1. 美股修正 (40% 權重)
         forecast += (adr_impact / 100) * train[-1] * 0.4
+        
+        # 2. 加入「長線看多」人工偏置 (例如每天自動加 0.1% 的漲幅)
+        # 這會讓預測線看起來比較積極
+        growth_bias = np.linspace(0, train[-1] * 0.01, days) # 假設未來幾天有 1% 的潛在漲幅
+        forecast += growth_bias
+        
         std = np.std(train[-20:]) * noise
         return forecast, forecast-std, forecast+std
     except:
