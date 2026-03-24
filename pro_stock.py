@@ -136,23 +136,24 @@ if df is not None:
             fill='toself', fillcolor='rgba(0,0,255,0.1)', line_color='rgba(255,255,255,0)', name='Risk Band'
         ))
 
-fig.update_layout(
+    # --- 修正後的佈局設定 (請確保縮進正確) ---
+    fig.update_layout(
         title=f"{target_name} 互動 K線與趨勢預測",
         template="plotly_white",
         xaxis_rangeslider_visible=False,
-        height=700, # 稍微加高一點，給下方圖例空間
+        height=700, 
         yaxis_title="Price (TWD)",
-        # --- 新增圖例位置設定 ---
         legend=dict(
             orientation="h",      # 水平排列
-            yanchor="bottom",     # 錨點在底部
-            y=-0.2,               # 放在圖表下方 (負值代表圖表框外)
-            xanchor="center",     # 錨點在中心
-            x=0.5                 # 水平置中
+            yanchor="bottom",
+            y=-0.25,              # 稍微拉低一點避免重疊
+            xanchor="center",
+            x=0.5
         ),
-        margin=dict(b=100)        # 增加底部邊距，避免圖例被切掉
+        margin=dict(b=150)        # 留白空間
     )
 
+    # 顯示圖表
     st.plotly_chart(fig, use_container_width=True)
 
     # 數據指標卡
