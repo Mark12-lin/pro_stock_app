@@ -23,15 +23,33 @@ target_name = st.sidebar.selectbox("選擇分析標的", list(stocks.keys()))
 symbol = stocks[target_name]
 predict_days = st.sidebar.slider("預測未來天數", 5, 20, 10)
 
-# --- 資料抓取與快取 (設定1小時過期，確保每日更新) ---
+# --- 修正後的資料載入與檢查 ---
 @st.cache_data(ttl=3600)
 def load_data(sym):
     df = yf.download(sym, period="1y")
+    # 檢查是否為空
+    if df.empty:
+        return None
+    
+    # 修正 yfinance 可能產生的多層索引問題 (重要！)
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = df.columns.get_level_values(0)
+        
     df['MA20'] = df['Close'].rolling(20).mean()
     df['MA60'] = df['Close'].rolling(60).mean()
     return df
 
 df = load_data(symbol)
+
+# --- 判斷資料是否存在 ---
+if df is None or len(df) < 30:
+    st.error(f"⚠️ 無法取得 {target_name} 的足夠歷史資料，請稍後再試或更換股票。")
+else:
+    # 只有在有資料的情況下，才執行後面的邏輯
+    last_price = float(df['Close'].iloc[-1])
+    
+    # 呼叫預測函數 (確認 get_prediction 也在 if 裡面)
+    future_dates, future_preds = get_prediction(df, predict_days)
 
 # --- 修正後的漲跌幅預測邏輯 ---
 def get_prediction(df, days):
