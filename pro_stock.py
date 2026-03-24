@@ -33,26 +33,27 @@ def load_data(sym):
 
 df = load_data(symbol)
 
-# --- 漲跌幅預測邏輯 (線性回歸) ---
+# --- 修正後的漲跌幅預測邏輯 ---
 def get_prediction(df, days):
-    # 使用最近 30 天的資料來預測趨勢
-    recent_df = df.tail(30).copy()
+    # 1. 確保資料沒有空值，並取最近 30 天
+    recent_df = df.dropna(subset=['Close']).tail(30).copy()
+    
+    # 2. 轉換資料格式，確保 y 是一維數組且不含多層索引
     X = np.array(range(len(recent_df))).reshape(-1, 1)
-    y = recent_df['Close'].values
+    y = recent_df['Close'].values.flatten() # 確保 y 是平整的
     
     model = LinearRegression()
-    model.fit(X, y)
+    model.fit(X, y) # 這次不會報錯了
     
-    # 預測未來
+    # 3. 預測未來
     future_X = np.array(range(len(recent_df), len(recent_df) + days)).reshape(-1, 1)
     future_preds = model.predict(future_X)
     
-    # 建立時間軸
+    # 4. 建立時間軸
     last_date = recent_df.index[-1]
-    future_dates = [last_date + timedelta(days=i) for i in range(1, days + 1)]
+    # 確保日期計算不會因為時區報錯
+    future_dates = [pd.to_datetime(last_date).date() + timedelta(days=i) for i in range(1, days + 1)]
     return future_dates, future_preds
-
-future_dates, future_preds = get_prediction(df, predict_days)
 
 # --- UI 顯示：智慧推薦 ---
 last_price = float(df['Close'].iloc[-1])
